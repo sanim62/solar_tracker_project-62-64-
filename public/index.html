@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarDash — Real-Time Solar Tracker Dashboard</title>
+    <meta name="description" content="Real-time monitoring, 3D simulation, and admin dashboard for a dual-axis solar tracker powered by ESP32 and Blynk IoT.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-solar-panel"></i>
+                <h2>SolarDash</h2>
+            </div>
+            <nav>
+                <a href="#" class="active" data-page="page-dashboard"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="#" data-page="page-settings"><i class="fa-solid fa-gear"></i> Settings</a>
+                <a href="#" data-page="page-history"><i class="fa-solid fa-clock-rotate-left"></i> History</a>
+                <a href="/admin.html"><i class="fa-solid fa-user-shield"></i> Admin</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-info">
+                    <span id="last-updated">Updated: --:--:--</span>
+                </div>
+                <div class="sidebar-badge">
+                    <i class="fa-solid fa-microchip"></i> ESP32 + Blynk
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+
+            <!-- ===================== DASHBOARD PAGE ===================== -->
+            <div class="page active" id="page-dashboard">
+                <header style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                    <h1><i class="fa-solid fa-chart-line"></i> Real-Time Monitoring</h1>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button id="btn-test-mode" class="status-badge" style="cursor: pointer; background: rgba(255, 159, 64, 0.08); border-color: rgba(255, 159, 64, 0.3); color: var(--accent-orange); font-weight: 600; outline: none; transition: var(--transition);">
+                            <i class="fa-solid fa-flask"></i> Enable Test Simulator
+                        </button>
+                        <div class="status-badge" id="conn-status">
+                            <span class="dot blinking"></span> Connecting to Blynk...
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Interactive Test Simulator Control Panel (Hidden by default, styled to match premium theme) -->
+                <div class="card sim-test-card" id="test-simulator-panel" style="display: none; margin-bottom: 2rem; border: 1px solid rgba(255, 159, 64, 0.25); background: rgba(255, 159, 64, 0.02); box-shadow: 0 8px 32px rgba(255, 159, 64, 0.05); backdrop-filter: blur(12px); border-radius: var(--radius); padding: 1.5rem; transition: var(--transition);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid rgba(255, 159, 64, 0.1); padding-bottom: 0.8rem;">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <div style="width: 32px; height: 32px; border-radius: 50%; background: rgba(255, 159, 64, 0.15); display: flex; align-items: center; justify-content: center;">
+                                <i class="fa-solid fa-flask" style="color: var(--accent-orange); font-size: 1.1rem; filter: drop-shadow(0 0 6px rgba(255, 159, 64, 0.5));"></i>
+                            </div>
+                            <div>
+                                <h3 style="margin: 0; font-size: 1rem; font-weight: 600; color: var(--text-primary);">Interactive Sun Tracking Simulator</h3>
+                                <span style="font-size: 0.72rem; color: var(--text-secondary);">Calculates mathematical light vector projection on LDR sensors, simulated PID tracking, and solar power metrics.</span>
+                            </div>
+                        </div>
+                        <button id="btn-stop-sim" class="status-badge" style="cursor: pointer; background: rgba(255, 99, 132, 0.15); border-color: rgba(255, 99, 132, 0.3); color: #ff6384; font-weight: 600; outline: none;">
+                            <i class="fa-solid fa-xmark"></i> Exit Simulator Mode
+                        </button>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; align-items: stretch;">
+                        <!-- Preset Controls -->
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: var(--radius-sm); padding: 1.2rem; display: flex; flex-direction: column; justify-content: space-between;">
+                            <div>
+                                <span style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; display: block; margin-bottom: 10px;">1. Select Sun Position Preset</span>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button class="sim-preset-btn status-badge active" data-preset="east" style="cursor: pointer; font-size: 0.75rem; border-radius: 6px; padding: 0.35rem 0.8rem; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: var(--text-secondary);">Morning (East)</button>
+                                    <button class="sim-preset-btn status-badge" data-preset="zenith" style="cursor: pointer; font-size: 0.75rem; border-radius: 6px; padding: 0.35rem 0.8rem; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: var(--text-secondary);">Noon (Zenith)</button>
+                                    <button class="sim-preset-btn status-badge" data-preset="west" style="cursor: pointer; font-size: 0.75rem; border-radius: 6px; padding: 0.35rem 0.8rem; background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.1); color: var(--text-secondary);">Evening (West)</button>
+                                    <button class="sim-preset-btn status-badge" data-preset="dynamic" style="cursor: pointer; font-size: 0.75rem; border-radius: 6px; padding: 0.35rem 0.8rem; color: var(--accent-purple); border-color: rgba(153, 102, 255, 0.25); background: rgba(153, 102, 255, 0.05);">
+                                        <i class="fa-solid fa-repeat"></i> Auto-Orbiting Sun
+                                    </button>
+                                </div>
+                            </div>
+                            <p style="font-size: 0.7rem; color: var(--text-secondary); margin-top: 12px; line-height: 1.4;">
+                                <strong>Manual override:</strong> Changing sliders will automatically pause the auto-orbit cycle.
+                            </p>
+                        </div>
+                        <!-- Sun Manual Sliders -->
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: var(--radius-sm); padding: 1.2rem; display: flex; flex-direction: column; gap: 10px;">
+                            <span style="font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; display: block;">2. Manual Adjustments</span>
+                            <div style="display: flex; flex-direction: column; gap: 8px;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px;">
+                                        <span style="color: var(--text-secondary);">Sun Azimuth (Pan Direction):</span>
+                                        <span id="lbl-sim-azimuth" style="color: var(--accent-orange); font-weight: 600; font-family: monospace;">45°</span>
+                                    </div>
+                                    <input type="range" id="sim-azimuth" min="0" max="180" value="45" style="width: 100%; height: 5px; accent-color: var(--accent-orange); outline: none; background: rgba(255,255,255,0.1); border-radius: 3px; cursor: pointer;">
+                                </div>
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 2px;">
+                                        <span style="color: var(--text-secondary);">Sun Elevation (Height):</span>
+                                        <span id="lbl-sim-elevation" style="color: var(--accent-orange); font-weight: 600; font-family: monospace;">30°</span>
+                                    </div>
+                                    <input type="range" id="sim-elevation" min="5" max="90" value="30" style="width: 100%; height: 5px; accent-color: var(--accent-orange); outline: none; background: rgba(255,255,255,0.1); border-radius: 3px; cursor: pointer;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Live Simulation Feedback -->
+                        <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.04); border-radius: var(--radius-sm); padding: 1.2rem; display: flex; flex-direction: column; gap: 8px; justify-content: center;">
+                            <span style="font-size: 0.7rem; color: var(--accent-teal); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">3. Simulation Diagnostics</span>
+                            <div style="font-size: 0.78rem; display: flex; flex-direction: column; gap: 4px;">
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.04); padding-bottom: 2px;">
+                                    <span style="color: var(--text-secondary);">Tracking Offset:</span>
+                                    <span id="lbl-sim-error" style="font-family: monospace; font-weight: 600; color: #fff;">--</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; border-bottom: 1px dashed rgba(255,255,255,0.04); padding-bottom: 2px;">
+                                    <span style="color: var(--text-secondary);">Loop Mode:</span>
+                                    <span id="lbl-sim-controller" style="font-family: monospace; font-weight: 600; color: #33ff66;">ESP32 Controller Active</span>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; padding-bottom: 2px;">
+                                    <span style="color: var(--text-secondary);">Alignment Cos(θ):</span>
+                                    <span id="lbl-sim-cos" style="font-family: monospace; font-weight: 600; color: var(--accent-cyan);">--</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bento-grid">
+                    <!-- Voltage Card -->
+                    <div class="card metric-card" id="card-voltage">
+                        <div class="metric-icon" style="background: rgba(255, 99, 132, 0.15); color: #ff6384;">
+                            <i class="fa-solid fa-bolt"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h3>Voltage</h3>
+                            <p id="val-voltage">-- V</p>
+                            <canvas id="spark-voltage" class="sparkline" width="120" height="30"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Current Card -->
+                    <div class="card metric-card" id="card-current">
+                        <div class="metric-icon" style="background: rgba(54, 162, 235, 0.15); color: #36a2eb;">
+                            <i class="fa-solid fa-plug"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h3>Current</h3>
+                            <p id="val-current">-- A</p>
+                            <canvas id="spark-current" class="sparkline" width="120" height="30"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Power Card (highlighted) -->
+                    <div class="card metric-card highlight" id="card-power">
+                        <div class="metric-icon" style="background: rgba(75, 192, 192, 0.15); color: #4bc0c0;">
+                            <i class="fa-solid fa-sun"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h3>Power Output</h3>
+                            <p id="val-power">-- W</p>
+                            <canvas id="spark-power" class="sparkline" width="120" height="30"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Pan Angle Card -->
+                    <div class="card metric-card" id="card-pan">
+                        <div class="metric-icon" style="background: rgba(153, 102, 255, 0.15); color: #9966ff;">
+                            <i class="fa-solid fa-arrows-left-right"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h3>Pan Angle</h3>
+                            <p id="val-pan">--°</p>
+                            <span class="direction-badge" id="val-pan-direction">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Tilt Angle Card -->
+                    <div class="card metric-card" id="card-tilt">
+                        <div class="metric-icon" style="background: rgba(255, 159, 64, 0.15); color: #ff9f40;">
+                            <i class="fa-solid fa-arrows-up-down"></i>
+                        </div>
+                        <div class="metric-info">
+                            <h3>Tilt Angle</h3>
+                            <p id="val-tilt">--°</p>
+                            <span class="direction-badge" id="val-tilt-direction">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Efficiency Gauge Card -->
+                    <div class="card gauge-card" id="card-efficiency">
+                        <div class="card-header"><h3>System Efficiency</h3></div>
+                        <div class="gauge-container">
+                            <svg viewBox="0 0 120 120" class="gauge-svg">
+                                <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+                                <circle id="efficiency-ring" cx="60" cy="60" r="52" fill="none" stroke="url(#efficiency-gradient)" stroke-width="8" stroke-linecap="round"
+                                    stroke-dasharray="326.73"
+                                    stroke-dashoffset="326.73"
+                                    transform="rotate(-90 60 60)"
+                                    style="transition: stroke-dashoffset 0.8s ease;"/>
+                                <defs>
+                                    <linearGradient id="efficiency-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                        <stop offset="0%" stop-color="#4bc0c0"/>
+                                        <stop offset="100%" stop-color="#38bdf8"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                            <div class="gauge-text">
+                                <span id="val-efficiency">0.0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3D Simulation Card -->
+                    <div class="card simulation-card" id="card-3d">
+                        <div class="card-header">
+                            <h2><i class="fa-solid fa-cube"></i> Live 3D Orientation</h2>
+                            <span class="card-subtitle">Drag to rotate • Scroll to zoom</span>
+                        </div>
+                        <div id="3d-container"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== SETTINGS PAGE ===================== -->
+            <div class="page" id="page-settings">
+                <header>
+                    <h1><i class="fa-solid fa-gear"></i> Settings</h1>
+                </header>
+                <div class="settings-grid">
+                    <div class="card settings-card">
+                        <h3><i class="fa-solid fa-gauge-high"></i> Polling Rate</h3>
+                        <p class="settings-desc">How often the dashboard fetches data from Blynk.</p>
+                        <div class="slider-group">
+                            <input type="range" id="refresh-rate" min="500" max="10000" step="500" value="2000">
+                            <span id="refresh-label">2000ms</span>
+                        </div>
+                    </div>
+                    <div class="card settings-card">
+                        <h3><i class="fa-solid fa-key"></i> Blynk Configuration</h3>
+                        <p class="settings-desc">Your current Blynk connection details (read-only).</p>
+                        <div class="config-row">
+                            <span class="config-label">Auth Token</span>
+                            <code class="config-value">CHDV...0ei</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Server</span>
+                            <code class="config-value">blynk.cloud</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Template ID</span>
+                            <code class="config-value">TMPL6OsUbiBDH</code>
+                        </div>
+                    </div>
+                    <div class="card settings-card">
+                        <h3><i class="fa-solid fa-diagram-project"></i> Pin Mapping</h3>
+                        <p class="settings-desc">Virtual pins used by the ESP32 sketch.</p>
+                        <table class="pin-table">
+                            <thead><tr><th>Pin</th><th>Data</th><th>Type</th></tr></thead>
+                            <tbody>
+                                <tr><td>V1</td><td>Voltage</td><td>Double</td></tr>
+                                <tr><td>V2</td><td>Current</td><td>Double</td></tr>
+                                <tr><td>V3</td><td>Power</td><td>Double</td></tr>
+                                <tr><td>V4</td><td>Pan Angle</td><td>Integer</td></tr>
+                                <tr><td>V5</td><td>Tilt Angle</td><td>Integer</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="card settings-card setup-guide">
+                        <h3><i class="fa-solid fa-circle-exclamation"></i> Blynk Setup Guide</h3>
+                        <p class="settings-desc">If V3–V5 are not showing data, follow these steps:</p>
+                        <ol class="setup-steps">
+                            <li>Go to <a href="https://blynk.cloud" target="_blank">blynk.cloud</a> and open your <strong>Templates</strong></li>
+                            <li>Select template <strong>"solar tracker 2207062"</strong></li>
+                            <li>Go to the <strong>Datastreams</strong> tab</li>
+                            <li>Create <strong>V3</strong> — Name: Power, Type: <code>Double</code>, Min: 0, Max: 100</li>
+                            <li>Create <strong>V4</strong> — Name: Pan Angle, Type: <code>Integer</code>, Min: 0, Max: 180</li>
+                            <li>Create <strong>V5</strong> — Name: Tilt Angle, Type: <code>Integer</code>, Min: 0, Max: 180</li>
+                            <li>Click <strong>Save and Apply</strong></li>
+                            <li>Restart the Wokwi simulation</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== HISTORY PAGE ===================== -->
+            <div class="page" id="page-history">
+                <header>
+                    <h1><i class="fa-solid fa-clock-rotate-left"></i> Data History</h1>
+                </header>
+                <div class="history-grid">
+                    <div class="card history-card">
+                        <h3>Voltage Trend</h3>
+                        <canvas id="history-voltage" width="600" height="200"></canvas>
+                    </div>
+                    <div class="card history-card">
+                        <h3>Current Trend</h3>
+                        <canvas id="history-current" width="600" height="200"></canvas>
+                    </div>
+                    <div class="card history-card full-width">
+                        <h3>Power Output Trend</h3>
+                        <canvas id="history-power" width="1200" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===================== ADMIN PAGE ===================== -->
+            <div class="page" id="page-admin">
+                <header>
+                    <h1><i class="fa-solid fa-user-shield"></i> Admin Panel</h1>
+                </header>
+                <div class="admin-grid">
+                    <div class="card admin-info-card">
+                        <h3><i class="fa-solid fa-server"></i> System Info</h3>
+                        <div class="config-row">
+                            <span class="config-label">Microcontroller</span>
+                            <code class="config-value">ESP32 DevKit V1</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">WiFi SSID</span>
+                            <code class="config-value">Wokwi-GUEST</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Blynk Server</span>
+                            <code class="config-value">blynk.cloud</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Roll Number</span>
+                            <code class="config-value">2207062</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Tracker Type</span>
+                            <code class="config-value">Dual-Axis (Pan + Tilt)</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Max Voltage</span>
+                            <code class="config-value">20V</code>
+                        </div>
+                        <div class="config-row">
+                            <span class="config-label">Max Current</span>
+                            <code class="config-value">5A</code>
+                        </div>
+                    </div>
+                    <div class="card admin-log-card">
+                        <h3><i class="fa-solid fa-list-check"></i> Event Log</h3>
+                        <div id="event-log" class="event-log">
+                            <div class="log-entry info">
+                                <span class="log-time">--</span>
+                                <span class="log-type">INFO</span>
+                                <span class="log-msg">Waiting for events...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Three.js Library (jsDelivr CDN - reliable r128 mirror) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "author": "Antigravity",
+  "editor": "wokwi",
+  "parts": [
+    {
+      "type": "wokwi-esp32-devkit-v1",
+      "id": "esp",
+      "top": 0,
+      "left": 0,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot_tl",
+      "top": -150,
+      "left": -150,
+      "attrs": {"label": "LDR Top-Left (TL)"}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot_tr",
+      "top": -150,
+      "left": 150,
+      "attrs": {"label": "LDR Top-Right (TR)"}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot_bl",
+      "top": 150,
+      "left": -150,
+      "attrs": {"label": "LDR Bottom-Left (BL)"}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot_br",
+      "top": 150,
+      "left": 150,
+      "attrs": {"label": "LDR Bottom-Right (BR)"}
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo_pan",
+      "top": 0,
+      "left": 250,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-servo",
+      "id": "servo_tilt",
+      "top": 100,
+      "left": 250,
+      "attrs": {}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot_vol",
+      "top": 250,
+      "left": -150,
+      "attrs": {"label": "Voltage"}
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot_cur",
+      "top": 250,
+      "left": 150,
+      "attrs": {"label": "Current"}
+    }
+  ],
+  "connections": [
+    [
+      "esp:TX0",
+      "$serialMonitor:RX",
+      "",
+      []
+    ],
+    [
+      "esp:RX0",
+      "$serialMonitor:TX",
+      "",
+      []
+    ],
+    [
+      "pot_tl:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "pot_tl:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "pot_tl:SIG",
+      "esp:D32",
+      "green",
+      []
+    ],
+    [
+      "pot_tr:GND",
+      "esp:GND.1",
+      "black",
+      []
+    ],
+    [
+      "pot_tr:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "pot_tr:SIG",
+      "esp:D33",
+      "yellow",
+      []
+    ],
+    [
+      "pot_bl:GND",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "pot_bl:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "pot_bl:SIG",
+      "esp:D34",
+      "blue",
+      []
+    ],
+    [
+      "pot_br:GND",
+      "esp:GND.2",
+      "black",
+      []
+    ],
+    [
+      "pot_br:VCC",
+      "esp:3V3",
+      "red",
+      []
+    ],
+    [
+      "pot_br:SIG",
+      "esp:D35",
+      "purple",
+      []
+    ],
+    [
+      "servo_pan:GND",
+      "esp:GND.3",
+      "black",
+      []
+    ],
+    [
+      "servo_pan:V+",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "servo_pan:PWM",
+      "esp:D18",
+      "orange",
+      []
+    ],
+    [
+      "servo_tilt:GND",
+      "esp:GND.3",
+      "black",
+      []
+    ],
+    [
+      "servo_tilt:V+",
+      "esp:VIN",
+      "red",
+      []
+    ],
+    [
+      "servo_tilt:PWM",
+      "esp:D19",
+      "orange",
+      []
+    ],
+    [ "pot_vol:GND", "esp:GND.1", "black", [] ],
+    [ "pot_vol:VCC", "esp:3V3", "red", [] ],
+    [ "pot_vol:SIG", "esp:D36", "orange", [] ],
+    [ "pot_cur:GND", "esp:GND.1", "black", [] ],
+    [ "pot_cur:VCC", "esp:3V3", "red", [] ],
+    [ "pot_cur:SIG", "esp:D39", "purple", [] ]
+  ],
+  "serialMonitor": {
+    "display": "always",
+    "newline": "lf"
+  }
+}

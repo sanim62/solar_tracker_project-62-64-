@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarDash — Admin Panel</title>
+    <meta name="description" content="Company administration panel for Solar Tracker analytics, device telemetry, logs, and CSV export.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Specific adjustments to adapt style.css for Admin Layout */
+        .admin-page-container {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            width: 100%;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .admin-controls-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1.2rem 2rem;
+        }
+
+        .device-selector-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .device-select {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
+            padding: 10px 16px;
+            border-radius: 8px;
+            outline: none;
+            font-family: inherit;
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .device-select:focus {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+        }
+
+        .btn-export {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, var(--accent-teal), #0284c7);
+            color: #ffffff;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-family: inherit;
+            box-shadow: 0 4px 12px rgba(20, 184, 166, 0.2);
+            transition: var(--transition);
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(20, 184, 166, 0.35);
+        }
+
+        /* Devices Table Styling */
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .device-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .device-table th, .device-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+            font-size: 0.88rem;
+        }
+
+        .device-table th {
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+        }
+
+        .device-table tr:hover td {
+            background: rgba(255, 255, 255, 0.01);
+        }
+
+        .device-table td {
+            color: var(--text-primary);
+        }
+
+        /* Status Pills */
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-pill.online {
+            background: rgba(54, 211, 153, 0.08);
+            border: 1px solid rgba(54, 211, 153, 0.2);
+            color: #34d399;
+        }
+
+        .status-pill.offline {
+            background: rgba(248, 113, 113, 0.08);
+            border: 1px solid rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+
+        .status-pill .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .status-pill.online .dot {
+            box-shadow: 0 0 8px #34d399;
+        }
+
+        /* Charts grid */
+        .charts-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .chart-card {
+            padding: 1.5rem;
+        }
+
+        .chart-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 0;
+            margin-bottom: 1.2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chart-container-inner {
+            position: relative;
+            height: 220px;
+            width: 100%;
+        }
+
+        .admin-grid-layout {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+            .admin-grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-solar-panel"></i>
+                <h2>SolarDash</h2>
+            </div>
+            <nav style="display: flex; flex-direction: column; height: calc(100% - 100px);">
+                <a href="/"><i class="fa-solid fa-chart-line"></i> Dashboard</a>
+                <a href="/admin.html" class="active"><i class="fa-solid fa-user-shield"></i> Admin Panel</a>
+                <a href="#" id="btn-logout" style="margin-top: auto; color: var(--accent-pink);"><i class="fa-solid fa-right-from-bracket"></i> Sign Out</a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="sidebar-info">
+                    <span id="user-display">Loading session...</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="admin-page-container">
+                <!-- Header -->
+                <header class="admin-header">
+                    <div>
+                        <h1><i class="fa-solid fa-user-shield"></i> Administration Console</h1>
+                        <p style="color: var(--text-secondary); margin: 4px 0 0 0; font-size: 0.88rem;">Monitor solar tracker installations, track sensor telemetry, and export logs.</p>
+                    </div>
+                    <div class="status-badge live" id="refresh-indicator">
+                        <span class="dot"></span> Operations Console Live
+                    </div>
+                </header>
+
+                <!-- Users / Devices Summary Table -->
+                <div class="card">
+                    <div class="card-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 1rem; margin-bottom: 1rem;">
+                        <h2><i class="fa-solid fa-server"></i> Registered Device Deployments</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="device-table" id="devices-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Email</th>
+                                    <th>Device ID</th>
+                                    <th>Status</th>
+                                    <th>Voltage</th>
+                                    <th>Power Output</th>
+                                    <th>Position</th>
+                                    <th>Last Telemetry</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="8" style="text-align: center; color: var(--text-secondary); padding: 2rem;">Loading deployment nodes...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Admin Controls Panel -->
+                <div class="card admin-controls-card">
+                    <div class="device-selector-group">
+                        <label for="device-select" style="font-size: 0.9rem; font-weight: 600;">Select Device Node:</label>
+                        <select id="device-select" class="device-select">
+                            <!-- Populated dynamically -->
+                        </select>
+                    </div>
+                    <button id="btn-csv-export" class="btn-export">
+                        <i class="fa-solid fa-file-csv"></i> Download CSV Telemetry (10k Readings)
+                    </button>
+                </div>
+
+                <!-- Telemetry Analysis & Alert Log Grid -->
+                <div class="admin-grid-layout">
+                    <!-- Charts Column -->
+                    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+                        <div class="card chart-card">
+                            <h3>
+                                <span><i class="fa-solid fa-bolt" style="color: #ff6384;"></i> 24h Voltage Trend</span>
+                                <span id="v-avg" style="font-size: 0.8rem; font-family: monospace; color: var(--text-secondary);">Avg: -- V</span>
+                            </h3>
+                            <div class="chart-container-inner">
+                                <canvas id="chart-voltage"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card chart-card">
+                            <h3>
+                                <span><i class="fa-solid fa-sun" style="color: #4bc0c0;"></i> 24h Power Generation</span>
+                                <span id="p-avg" style="font-size: 0.8rem; font-family: monospace; color: var(--text-secondary);">Avg: -- W</span>
+                            </h3>
+                            <div class="chart-container-inner">
+                                <canvas id="chart-power"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="card chart-card">
+                            <h3>
+                                <span><i class="fa-solid fa-chart-simple" style="color: var(--accent-cyan);"></i> 24h Tracker Alignment Efficiency</span>
+                                <span id="e-avg" style="font-size: 0.8rem; font-family: monospace; color: var(--text-secondary);">Avg: --%</span>
+                            </h3>
+                            <div class="chart-container-inner">
+                                <canvas id="chart-efficiency"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Logs Column -->
+                    <div class="card admin-log-card" style="display: flex; flex-direction: column;">
+                        <div class="card-header" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 1rem; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center;">
+                            <h3><i class="fa-solid fa-list-check"></i> Device Event Log</h3>
+                            <button id="btn-refresh-logs" class="status-badge" style="cursor: pointer; background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.1);"><i class="fa-solid fa-rotate"></i></button>
+                        </div>
+                        <div id="admin-event-log" class="event-log" style="flex: 1; max-height: 800px; overflow-y: auto;">
+                            <div class="log-entry info">
+                                <span class="log-time">--</span>
+                                <span class="log-type">INFO</span>
+                                <span class="log-msg">Select a device to load logs...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        let adminUser = null;
+        let activeCharts = {};
+        const activeDeviceId = '2207062'; // Default starting node
+
+        // Check authentication at startup
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/session');
+                if (!res.ok) throw new Error('Unauthenticated');
+                const sessionData = await res.json();
+                
+                if (!sessionData.loggedIn || sessionData.user.role !== 'admin') {
+                    window.location.href = '/login.html';
+                    return;
+                }
+                adminUser = sessionData.user;
+                document.getElementById('user-display').textContent = `Admin: ${adminUser.name}`;
+                initializeAdminConsole();
+            } catch (err) {
+                window.location.href = '/login.html';
+            }
+        }
+
+        // Initialize elements and fetch data
+        async function initializeAdminConsole() {
+            await loadDevicesTable();
+            
+            // Set up selector change listener
+            const deviceSelect = document.getElementById('device-select');
+            deviceSelect.addEventListener('change', (e) => {
+                loadDeviceTelemetry(e.target.value);
+            });
+
+            // Set up log refresh button
+            document.getElementById('btn-refresh-logs').addEventListener('click', () => {
+                loadDeviceLogs(deviceSelect.value);
+            });
+
+            // CSV download trigger
+            document.getElementById('btn-csv-export').addEventListener('click', () => {
+                const devId = deviceSelect.value;
+                if (devId) {
+                    window.location.href = `/api/admin/export?device_id=${devId}`;
+                }
+            });
+        }
+
+        // Load summary list of devices
+        async function loadDevicesTable() {
+            try {
+                const res = await fetch('/api/admin/devices');
+                if (!res.ok) throw new Error('Failed to fetch devices');
+                const devices = await res.json();
+                
+                const tableBody = document.querySelector('#devices-table tbody');
+                const deviceSelect = document.getElementById('device-select');
+                
+                tableBody.innerHTML = '';
+                deviceSelect.innerHTML = '';
+
+                if (devices.length === 0) {
+                    tableBody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-secondary);">No device nodes found.</td></tr>`;
+                    return;
+                }
+
+                devices.forEach((dev) => {
+                    // Determine online/offline status (offline if last telemetry was > 30s ago)
+                    const lastSeenTime = dev.last_seen ? new Date(dev.last_seen) : null;
+                    const isOnline = lastSeenTime && (Date.now() - lastSeenTime.getTime() < 30000);
+                    
+                    const statusClass = isOnline ? 'online' : 'offline';
+                    const statusText = isOnline ? 'Online' : 'Offline';
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="font-weight: 600;">${dev.user_name}</td>
+                        <td style="color: var(--text-secondary);">${dev.user_email}</td>
+                        <td style="font-family: monospace; font-weight: 600; color: var(--accent-cyan);">${dev.device_id}</td>
+                        <td>
+                            <span class="status-pill ${statusClass}">
+                                <span class="dot"></span> ${statusText}
+                            </span>
+                        </td>
+                        <td style="font-family: monospace;">${dev.voltage ? `${dev.voltage.toFixed(2)} V` : '--'}</td>
+                        <td style="font-family: monospace; font-weight: 600; color: var(--accent-teal);">${dev.power ? `${dev.power.toFixed(2)} W` : '--'}</td>
+                        <td style="font-family: monospace; font-size: 0.8rem;">Pan: ${dev.pan_angle ?? '--'}°<br>Tilt: ${dev.tilt_angle ?? '--'}°</td>
+                        <td style="color: var(--text-secondary); font-size: 0.8rem;">${lastSeenTime ? lastSeenTime.toLocaleString() : 'Never'}</td>
+                    `;
+                    tableBody.appendChild(row);
+
+                    // Populate select dropdown option
+                    const opt = document.createElement('option');
+                    opt.value = dev.device_id;
+                    opt.textContent = `${dev.user_name} (${dev.device_id})`;
+                    if (dev.device_id === activeDeviceId) {
+                        opt.selected = true;
+                    }
+                    deviceSelect.appendChild(opt);
+                });
+
+                // Load initial selected device telemetry
+                loadDeviceTelemetry(deviceSelect.value || activeDeviceId);
+
+            } catch (err) {
+                console.error(err);
+                document.querySelector('#devices-table tbody').innerHTML = `
+                    <tr><td colspan="8" style="text-align: center; color: var(--accent-pink);">Error connecting to system nodes.</td></tr>
+                `;
+            }
+        }
+
+        // Fetch charts and logs for selected device
+        async function loadDeviceTelemetry(deviceId) {
+            if (!deviceId) return;
+            await Promise.all([
+                loadChartsData(deviceId),
+                loadDeviceLogs(deviceId)
+            ]);
+        }
+
+        // Load telemetry data from database and build charts
+        async function loadChartsData(deviceId) {
+            try {
+                const res = await fetch(`/api/history?device_id=${deviceId}&hours=24`);
+                if (!res.ok) throw new Error('Telemetry history fetch failed');
+                const readings = await res.json();
+
+                const timestamps = readings.map(r => new Date(r.recorded_at).toLocaleTimeString());
+                const voltage = readings.map(r => r.voltage);
+                const power = readings.map(r => r.power);
+                const efficiency = readings.map(r => r.efficiency);
+
+                // Compute averages
+                const avgV = voltage.length ? (voltage.reduce((a, b) => a + b, 0) / voltage.length).toFixed(2) : '--';
+                const avgP = power.length ? (power.reduce((a, b) => a + b, 0) / power.length).toFixed(2) : '--';
+                const avgE = efficiency.length ? (efficiency.reduce((a, b) => a + b, 0) / efficiency.length).toFixed(1) : '--';
+
+                document.getElementById('v-avg').textContent = `Avg: ${avgV} V`;
+                document.getElementById('p-avg').textContent = `Avg: ${avgP} W`;
+                document.getElementById('e-avg').textContent = `Avg: ${avgE}%`;
+
+                // Build / update charts
+                renderTrendChart('chart-voltage', 'Voltage (V)', timestamps, voltage, '#ff6384');
+                renderTrendChart('chart-power', 'Power Output (W)', timestamps, power, '#4bc0c0');
+                renderTrendChart('chart-efficiency', 'Tracker Efficiency (%)', timestamps, efficiency, '#38bdf8');
+
+            } catch (err) {
+                console.error('Error fetching/rendering admin charts:', err);
+            }
+        }
+
+        // Standardized Chart.js line builder
+        function renderTrendChart(canvasId, label, labels, data, color) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            
+            if (activeCharts[canvasId]) {
+                activeCharts[canvasId].destroy();
+            }
+
+            const chartData = {
+                labels,
+                datasets: [{
+                    label,
+                    data,
+                    borderColor: color,
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true,
+                    backgroundColor: color + '15',
+                    pointRadius: 0,
+                    pointHoverRadius: 4
+                }]
+            };
+
+            const chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 10 }, maxTicksLimit: 8 }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: 'rgba(255, 255, 255, 0.4)', font: { size: 10 } }
+                    }
+                }
+            };
+
+            activeCharts[canvasId] = new Chart(ctx, {
+                type: 'line',
+                data: chartData,
+                options: chartOptions
+            });
+        }
+
+        // Fetch logs
+        async function loadDeviceLogs(deviceId) {
+            const logContainer = document.getElementById('admin-event-log');
+            logContainer.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--text-secondary);"><i class="fa-solid fa-spinner fa-spin"></i> Loading node logs...</div>`;
+            
+            try {
+                const res = await fetch(`/api/alerts?device_id=${deviceId}&limit=100`);
+                if (!res.ok) throw new Error('Failed to fetch alerts');
+                const alerts = await res.json();
+
+                if (alerts.length === 0) {
+                    logContainer.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--text-secondary);">No alert events logged for this node.</div>`;
+                    return;
+                }
+
+                logContainer.innerHTML = alerts.map(e => `
+                    <div class="log-entry ${e.level}">
+                        <span class="log-time">${new Date(e.created_at).toLocaleTimeString()}</span>
+                        <span class="log-type">${e.level.toUpperCase()}</span>
+                        <span class="log-msg">${e.message}</span>
+                    </div>
+                `).join('');
+            } catch (err) {
+                console.error(err);
+                logContainer.innerHTML = `<div style="text-align: center; padding: 1.5rem; color: var(--accent-pink);">Failed to connect to log stream.</div>`;
+            }
+        }
+
+        // Logout Button Handler
+        document.getElementById('btn-logout').addEventListener('click', async (e) => {
+            e.preventDefault();
+            try {
+                await fetch('/api/logout', { method: 'POST' });
+                window.location.href = '/login.html';
+            } catch (err) {
+                window.location.href = '/login.html';
+            }
+        });
+
+        // Run auth checks at startup
+        document.addEventListener('DOMContentLoaded', checkAuth);
+    </script>
+</body>
+</html>

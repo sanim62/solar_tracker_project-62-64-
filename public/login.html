@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarDash — Admin Login</title>
+    <meta name="description" content="Secure portal to the Solar Tracker Admin Dashboard.">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: radial-gradient(circle at 50% 50%, #151d35 0%, #0a0e1a 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            color: var(--text-primary);
+            overflow: hidden;
+        }
+
+        /* Glassmorphic Login Container */
+        .login-container {
+            width: 100%;
+            max-width: 420px;
+            padding: 2.5rem;
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.5);
+            text-align: center;
+            position: relative;
+            z-index: 10;
+        }
+
+        .brand-header {
+            margin-bottom: 2rem;
+        }
+
+        .brand-header i {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--accent-cyan), #38bdf8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 10px rgba(56, 189, 248, 0.3));
+            margin-bottom: 0.5rem;
+        }
+
+        .brand-header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: 0.5px;
+        }
+
+        .brand-header p {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin: 0.25rem 0 0 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+            text-align: left;
+            position: relative;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-secondary);
+            font-size: 1rem;
+            pointer-events: none;
+            transition: color 0.3s ease;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px 12px 42px;
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            background: rgba(255, 255, 255, 0.07);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+        }
+
+        .form-control:focus + i {
+            color: var(--accent-cyan);
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--accent-cyan), #38bdf8);
+            border: none;
+            border-radius: 10px;
+            color: #0b0f19;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            cursor: pointer;
+            outline: none;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            margin-top: 1rem;
+            box-shadow: 0 4px 15px rgba(56, 189, 248, 0.25);
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(56, 189, 248, 0.4);
+            background: linear-gradient(135deg, #38bdf8, var(--accent-cyan));
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .error-message {
+            background: rgba(255, 99, 132, 0.1);
+            border: 1px solid rgba(255, 99, 132, 0.2);
+            color: #ff6384;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.82rem;
+            margin-bottom: 1.5rem;
+            display: none;
+            text-align: left;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Test credentials helper block */
+        .credentials-helper {
+            margin-top: 2rem;
+            padding-top: 1.2rem;
+            border-top: 1px dashed rgba(255, 255, 255, 0.08);
+            text-align: left;
+        }
+
+        .credentials-helper h4 {
+            margin: 0 0 6px 0;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--accent-orange);
+        }
+
+        .credentials-helper p {
+            margin: 0;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            line-height: 1.45;
+        }
+
+        .credentials-helper code {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 2px 5px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: var(--text-primary);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="brand-header">
+            <i class="fa-solid fa-solar-panel"></i>
+            <h1>SolarDash</h1>
+            <p>Admin Operations Portal</p>
+        </div>
+
+        <div id="error-box" class="error-message">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            <span id="error-text">Invalid credentials. Please try again.</span>
+        </div>
+
+        <form id="login-form">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <div class="input-wrapper">
+                    <input type="email" id="email" class="form-control" placeholder="admin@tracker.com" required autocomplete="email">
+                    <i class="fa-solid fa-envelope"></i>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="input-wrapper">
+                    <input type="password" id="password" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+                    <i class="fa-solid fa-lock"></i>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fa-solid fa-right-to-bracket"></i> Sign In
+            </button>
+        </form>
+
+        <div class="credentials-helper">
+            <h4><i class="fa-solid fa-flask"></i> Testing Credentials</h4>
+            <p>
+                <strong>Admin:</strong> <code>admin@tracker.com</code> / <code>admin123</code><br>
+                <strong>User:</strong> <code>user@tracker.com</code> / <code>user123</code>
+            </p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const errorBox = document.getElementById('error-box');
+            const errorText = document.getElementById('error-text');
+
+            errorBox.style.display = 'none';
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    if (data.user.role === 'admin') {
+                        window.location.href = '/admin.html';
+                    } else {
+                        // User role redirected back to main page
+                        window.location.href = '/';
+                    }
+                } else {
+                    errorText.textContent = data.error || 'Authentication failed.';
+                    errorBox.style.display = 'flex';
+                }
+            } catch (err) {
+                errorText.textContent = 'Server connection failed.';
+                errorBox.style.display = 'flex';
+            }
+        });
+    </script>
+</body>
+</html>
